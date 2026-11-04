@@ -1,7 +1,13 @@
+from utils.ckpt_utils import safe_load
 # -*- coding: utf-8 -*-
 # test_only_images.py
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 import os, time, argparse
 import numpy as np
+from utils.metrics import make_lpips
 from PIL import Image
 
 import torch
@@ -12,9 +18,9 @@ from utils.dataset_loader import load_combined_dataset, IMAGENET_MEAN, IMAGENET_
 from model.wadt_net import WADNet
 from model.embedder import build_embedder
 
-from skimage.metrics import peak_signal_noise_ratio as compute_psnr
-from skimage.metrics import structural_similarity as compute_ssim
-import lpips
+from utils.metrics import peak_signal_noise_ratio as compute_psnr
+from utils.metrics import structural_similarity as compute_ssim
+
 
 
 def print_args(args):
@@ -56,7 +62,7 @@ def safe_torch_load(path: str, device):
     You trust your own checkpoint, so weights_only=False is appropriate.
     """
     try:
-        return torch.load(path, map_location=device, weights_only=False)
+        return safe_load(path, device)
     except TypeError:
         # older torch versions
         return torch.load(path, map_location=device)
@@ -95,7 +101,7 @@ def evaluate_loader(args, loader, restorer, embedder, lpips_fn, device):
         tgt = batch["target"].to(device)   # ImageNet normalized
         files = batch.get("file", [""] * inp.shape[0])
 
-        # --- Image-only conditioning 
+        # --- Image-only conditioning
         t0 = time.time()
         img_emb = embedder.embed_for_style_transfer(inp)  # <- IMPORTANT: uses dataset tensor directly
         out, *_ = restorer(inp, img_emb)
@@ -125,7 +131,7 @@ def evaluate_loader(args, loader, restorer, embedder, lpips_fn, device):
             psnr_out_all.append(psnr_out); ssim_out_all.append(ssim_out); lp_out_all.append(lp_out)
 
             if (args.save_n is not None) and (saved < args.save_n):
-                fn = os.path.basename(str(files[b]))
+                fn = str(batch["source_weather"][b]) + "_" + os.path.basename(str(files[b]))
                 if not fn:
                     fn = f"sample_{len(psnr_out_all):06d}.png"
                 vis = torch.cat([inp01[b:b+1], out01[b:b+1], tgt01[b:b+1]], dim=3)  # [1,3,H,3W]
@@ -165,7 +171,7 @@ def evaluate_loader(args, loader, restorer, embedder, lpips_fn, device):
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("✨ > Loading embedder (frozen)...")
-    embedder = build_embedder(backbone=args.type_name, out_dim=512).to(device)
+    embedder = build_embedder(checkpoint=args.embedder_model_path, backbone=args.type_name, out_dim=512).to(device)
     # Your embedder ckpt loading utility:
     from utils.ckpt_utils import load_checkpoint_if_any
     load_checkpoint_if_any(embedder, ckpt_path=args.embedder_model_path, map_location=device)
@@ -183,7 +189,7 @@ def main(args):
         use_windowed_sa=(not args.disable_wsa),
     )
 
-    lpips_fn = lpips.LPIPS(net="vgg").to(device).eval()
+    lpips_fn = make_lpips(device)
 
     # ---- test loader via your dataset loader ----
     _, _, test_loader, eval_info = load_combined_dataset(

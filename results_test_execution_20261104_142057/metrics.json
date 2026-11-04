@@ -1,0 +1,590 @@
+{
+  "dataset": "gy65896/CDD-11 official test",
+  "download_manifest": {
+    "repository": "https://huggingface.co/datasets/gy65896/CDD-11",
+    "archive_url": "https://huggingface.co/datasets/gy65896/CDD-11/resolve/main/test.zip?download=true",
+    "metadata": {
+      "type": "file",
+      "oid": "da386c5653fbb76fa144c6e8df873600d9891a49",
+      "size": 3770337157,
+      "lfs": {
+        "oid": "421567fceda89659a6d047fc78d82f77c68703203336d9c795213ba7096646dc",
+        "size": 3770337157,
+        "pointerSize": 135
+      },
+      "xetHash": "595efe141e423a5a460f3bb0922bdbd732c9494ffee5b64078000fb492ebce30",
+      "path": "test.zip"
+    },
+    "split": "test",
+    "status": "downloaded_verified_extracted",
+    "unique_referenced_images": 2400
+  },
+  "pair_count": 2400,
+  "class_counts": {
+    "haze": 200,
+    "haze_rain": 200,
+    "haze_snow": 200,
+    "low": 200,
+    "low_haze": 200,
+    "low_haze_rain": 200,
+    "low_haze_snow": 200,
+    "low_rain": 200,
+    "low_snow": 200,
+    "rain": 200,
+    "snow": 200,
+    "clear": 200
+  },
+  "settings": {
+    "root": "data/cdd11",
+    "output": "results_test_execution_20261104_142057",
+    "batch_size": 8,
+    "workers": 4,
+    "size": 224,
+    "max_per_class": null,
+    "conditioning": "both",
+    "shifted": false,
+    "device": "cuda"
+  },
+  "elapsed_seconds": 310.85028579999926,
+  "metrics": {
+    "input_psnr": {
+      "finite_mean": 16.551279686447597,
+      "finite_count": 2200,
+      "infinite_count": 200,
+      "nan_count": 0
+    },
+    "input_ssim": {
+      "finite_mean": 0.7474088725637917,
+      "finite_count": 2400,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "image_psnr": {
+      "finite_mean": 19.443850072977185,
+      "finite_count": 2400,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "image_ssim": {
+      "finite_mean": 0.8149782285686535,
+      "finite_count": 2400,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "fused_psnr": {
+      "finite_mean": 29.74756767510769,
+      "finite_count": 2400,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "fused_ssim": {
+      "finite_mean": 0.9225710651102581,
+      "finite_count": 2400,
+      "infinite_count": 0,
+      "nan_count": 0
+    }
+  },
+  "degraded_only_metrics": {
+    "input_psnr": {
+      "finite_mean": 16.551279686447597,
+      "finite_count": 2200,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "input_ssim": {
+      "finite_mean": 0.7244460427968636,
+      "finite_count": 2200,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "image_psnr": {
+      "finite_mean": 18.628065750821666,
+      "finite_count": 2200,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "image_ssim": {
+      "finite_mean": 0.8000272873502015,
+      "finite_count": 2200,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "fused_psnr": {
+      "finite_mean": 27.285528356903175,
+      "finite_count": 2200,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "fused_ssim": {
+      "finite_mean": 0.9155438783771391,
+      "finite_count": 2200,
+      "infinite_count": 0,
+      "nan_count": 0
+    }
+  },
+  "per_class": {
+    "haze": {
+      "input_psnr": {
+        "finite_mean": 16.15798151061923,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.8061809155289822,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 20.16124962538401,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.9154619817244043,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 29.415094867935558,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.9819146921831949,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "haze_snow": {
+      "input_psnr": {
+        "finite_mean": 15.088240367744488,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.7147956898587771,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 18.506783300499382,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.816178778028712,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 25.95658725395298,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.9131433990077652,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "rain": {
+      "input_psnr": {
+        "finite_mean": 22.730635372969473,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.8872576160455232,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 23.11877088349538,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.8906979981176988,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 31.532341761365625,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.9626493848209747,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "low_haze_rain": {
+      "input_psnr": {
+        "finite_mean": 16.02294568474348,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.6953896450673356,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 19.19047562195617,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.8148319181327562,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 25.47798409031758,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.8947374982996336,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "snow": {
+      "input_psnr": {
+        "finite_mean": 24.16017518762831,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.8256593852630917,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 22.72846008564501,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.8227966220862188,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 29.712912086614352,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.9273162828474335,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "low_rain": {
+      "input_psnr": {
+        "finite_mean": 15.530577813643049,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.7069794533525703,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 17.1157133033205,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.7562693821037013,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 27.22005013044337,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.8975017669010444,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "low_snow": {
+      "input_psnr": {
+        "finite_mean": 14.101129552604482,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.5595889769761798,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 15.033452326872325,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.5889821918013918,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 25.19204627980047,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.8449939630917317,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "low": {
+      "input_psnr": {
+        "finite_mean": 12.369514285827458,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.6698428497002014,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 13.931436707978115,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.7593819642007105,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 28.52454994295757,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.9325832720619005,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "haze_rain": {
+      "input_psnr": {
+        "finite_mean": 15.050792515772041,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.7611392569578976,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 19.007290767234828,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.8732014243087649,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 27.438274062712527,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.9510869747547147,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "low_haze": {
+      "input_psnr": {
+        "finite_mean": 15.579699989614005,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.7226689514426613,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 18.392155114473194,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.8474512569336983,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 25.86932321225369,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.9241830758507842,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "low_haze_snow": {
+      "input_psnr": {
+        "finite_mean": 15.272384269757506,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.6194037305722796,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 17.722935522179412,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.7150466434141604,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 23.80164823758119,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.8408723523293524,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    },
+    "clear": {
+      "input_psnr": {
+        "finite_mean": null,
+        "finite_count": 0,
+        "infinite_count": 200,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 1.0,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 28.417477616687865,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.9794385819716246,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 56.83000017535735,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.999870119174567,
+        "finite_count": 200,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    }
+  },
+  "lpips": "not measured: package/weights unavailable",
+  "assumptions": [
+    "ImageNet-normalized evaluator pipeline preserved",
+    "prototype labels follow source row order; learned semantics unverified",
+    "shift setting is explicit but historical setting unknown"
+  ],
+  "paper_reproduction": false
+}

@@ -1,0 +1,30 @@
+{
+  "input": "results_setup/fixture/test/haze/figure_crop.png",
+  "output": "results_setup/crop_shifted.png",
+  "embedder_model_path": "logs/embedder_resnet18_bs64_optadamw_lr1.00e-05_cw1.0_conw0.1_temp0.07_20260101-190539.pt",
+  "best_ckpt": "ckpts/best.ckpt",
+  "device": "cuda",
+  "height": 224,
+  "width": 224,
+  "conditioning": "image",
+  "weather": null,
+  "shifted": true,
+  "original_size": false,
+  "input_size": [
+    150,
+    150
+  ],
+  "output_size": [
+    224,
+    224
+  ],
+  "elapsed_seconds_including_transfer": 0.46965990000171587,
+  "checkpoint_load": "strict for all executed tensors",
+  "unused_kan_tensors": 11,
+  "assumptions": [
+    "shift setting unverified",
+    "prototype names use released source row order",
+    "ImageNet preprocessing preserved from released evaluator"
+  ],
+  "benchmark_validation": false
+}

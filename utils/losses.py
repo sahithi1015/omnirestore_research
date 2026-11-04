@@ -31,7 +31,7 @@ def ssim(img1, img2, window_size=11, window=None, size_average=True, full=False,
     if window is None:
         real_size = min(window_size, height, width)
         # DEVICE FIX 1: Ensure window is on the same device as img1
-        window = create_window(real_size, channel=channel).to(img1.device) 
+        window = create_window(real_size, channel=channel).to(img1.device)
 
     # ... (rest of ssim logic)
     mu1 = F.conv2d(img1, window, padding=padd, groups=channel)
@@ -60,7 +60,7 @@ def ssim(img1, img2, window_size=11, window=None, size_average=True, full=False,
 
 def msssim(img1, img2, window_size=11, size_average=True, val_range=None, normalize=False):
     # 🛑 DEVICE FIX 2: Ensure weights are on the same device as img1
-    weights = torch.FloatTensor([0.0448, 0.2856, 0.3001, 0.2363, 0.1333]).to(img1.device) 
+    weights = torch.FloatTensor([0.0448, 0.2856, 0.3001, 0.2363, 0.1333]).to(img1.device)
     levels = weights.size(0)
     mssim = []
     mcs = []
@@ -78,9 +78,9 @@ def msssim(img1, img2, window_size=11, size_average=True, val_range=None, normal
         mssim = (mssim + 1) / 2
         mcs = (mcs + 1) / 2
 
-    pow1 = mcs ** weights
-    pow2 = mssim ** weights
-    output = torch.prod(pow1[:-1] * pow2[-1])
+    pow1 = mcs.clamp_min(1e-8) ** weights
+    pow2 = mssim.clamp_min(1e-8) ** weights
+    output = torch.prod(pow1[:-1]) * pow2[-1]
     return output
 
 # --- Auxiliary Loss Classes ---
@@ -90,7 +90,7 @@ class ContrastLoss(nn.Module):
         self.l1 = nn.L1Loss()
         device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
         #DEVICE FIX 3: VGG moved to device
-        self.model = vgg16(weights=VGG16_Weights.DEFAULT).features[:16].to(device) 
+        self.model = vgg16(weights=VGG16_Weights.DEFAULT).features[:16].to(device)
         for param in self.model.parameters():
             param.requires_grad = False
         self.layer_name_mapping = {'3': "relu1_2", '8': "relu2_2", '15': "relu3_3"}
@@ -141,16 +141,16 @@ class ContrastLoss(nn.Module):
 
 class VGGPerceptualLoss(nn.Module):
     # Standard VGG Perceptual Loss (L1 distance in feature space)
-    def __init__(self, layers=[3, 8, 15], weight=1.0, device=None): 
+    def __init__(self, layers=[3, 8, 15], weight=1.0, device=None):
         super().__init__()
         self.layers = set(str(i) for i in layers)
         device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
         # DEVICE FIX 4: VGG moved to device
-        self.vgg = vgg16(weights=VGG16_Weights.DEFAULT).features[:16].eval().to(device) 
+        self.vgg = vgg16(weights=VGG16_Weights.DEFAULT).features[:16].eval().to(device)
         self.weight = weight
         for p in self.vgg.parameters():
             p.requires_grad = False
-        
+
         # Normalization: VGG requires input to be normalized by ImageNet mean/std
         # Define normalization layer on the specified device
         mean = torch.tensor([0.485, 0.456, 0.406]).to(device)
@@ -171,7 +171,7 @@ class VGGPerceptualLoss(nn.Module):
     def forward(self, pred, target):
         if pred is None or target is None:
             return 0.0
-        
+
         # NOTE: Pred and Target should be 3-channel images (which your trim_channels handles implicitly)
         feats_pred = self._feat(pred)
         feats_tgt = self._feat(target)
@@ -206,12 +206,12 @@ def severity_mse(pred, target):
 # ---------- Deep Supervision Feature Extractor (DEVICE FIX) ----------
 class GTFeatureExtractor(nn.Module):
     # Pass device during initialization
-    def __init__(self, channels=[16, 32, 64], device=None): 
+    def __init__(self, channels=[16, 32, 64], device=None):
         super().__init__()
-        
+
 
         device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.channels = channels
 
@@ -221,12 +221,12 @@ class GTFeatureExtractor(nn.Module):
         self.conv3 = nn.Conv2d(channels[1], channels[2], kernel_size=1, stride=1, padding=0).to(device)
 
     def forward(self, x):
-        feat_l = self.conv1(x) 
-        x = self.maxpool(feat_l) 
-        feat_m = self.conv2(x) 
+        feat_l = self.conv1(x)
+        x = self.maxpool(feat_l)
+        feat_m = self.conv2(x)
         x = self.maxpool(feat_m)
-        feat_s = self.conv3(x) 
-        
+        feat_s = self.conv3(x)
+
         # Detaching GT features is good practice for deep supervision targets
         return feat_l.detach(), feat_m.detach(), feat_s.detach()
 
@@ -235,72 +235,78 @@ class GTFeatureExtractor(nn.Module):
 # ---------- Unified Total Loss Class ----------
 class Total_loss(nn.Module):
 
-    def __init__(self, args, device='cuda'): 
+    def __init__(self, args, device='cuda'):
         super(Total_loss, self).__init__()
-        
+
         # 1. Unpack 4 weights: L1, MSSSIM, Contrast/DRL, Perceptual
         try:
-            # We assume the main script was updated to provide 4 weights: 
+            # We assume the main script was updated to provide 4 weights:
             # [w_sl1, w_msssim, w_drl (Contrast), w_percep (VGG)]
             self.w_sl1, self.w_msssim, self.w_drl, self.w_percep = args.loss_weight
         except ValueError:
             print("WARNING: Expected 4 loss_weight arguments but received 3. Using default for w_percep (0.5).")
             # Fallback for old 3-weight configuration, using w_drl as Contrast weight
             self.w_sl1, self.w_msssim, self.w_drl = args.loss_weight
-            self.w_percep = 0.5 
-            
+            self.w_percep = 0.5
+
         self.to(device)
-        
+
         # 2. Initialize Loss Components (passing device)
-        self.contrast = ContrastLoss(device=device) # Uses w_drl
+        self.contrast = ContrastLoss(device=device) if self.w_drl > 0 else None # Uses w_drl
         # Use a weight of 1.0 here, the final weight is applied in forward
-        self.perceptual = VGGPerceptualLoss(weight=1.0, device=device) 
+        self.perceptual = VGGPerceptualLoss(weight=1.0, device=device) if self.w_percep > 0 else None
         self.l1_loss = nn.L1Loss()
         self.smooth_l1_loss = nn.SmoothL1Loss()
 
         # 3. Component to generate ground truth features from the target image (pos)
-        self.gt_feat_extractor = GTFeatureExtractor(channels=[16, 32, 64], device=device)
-        
+        self.gt_feat_extractor = None  # Random untrained targets are not valid supervision.
+
         # 4. Dedicate a weight for the explicit Deep Supervision Feature Loss (feat_l, m, s)
         # This is a new, separate term, and we'll reuse w_drl as the weight for this too.
-        self.w_feat_match = self.w_drl # Reusing the DRL weight for both Contrast and Feature Match for simplicity
+        self.w_feat_match = 0.0 # Reusing the DRL weight for both Contrast and Feature Match for simplicity
 
 
 
     def forward(self, inp, pos, neg, out, feat_l=None, feat_m=None, feat_s=None):
-        
+
         # 1. Existing Image-level Losses
+        # The checkpoint uses ImageNet-normalized restoration tensors. Convert
+        # image losses to pixel space; ContrastLoss gets normalized VGG inputs.
+        norm_inp, norm_pos, norm_neg, norm_out = inp, pos, neg, out
+        mean = out.new_tensor([0.485, 0.456, 0.406])[None, :, None, None]
+        std = out.new_tensor([0.229, 0.224, 0.225])[None, :, None, None]
+        inp, pos, out = inp * std + mean, pos * std + mean, out * std + mean
         smooth_loss_l1 = self.smooth_l1_loss(out, pos)
-        msssim_loss = 1 - msssim(out, pos, normalize=True)
+        msssim_loss = 1 - msssim(out, pos, normalize=True, val_range=1) if self.w_msssim > 0 else 0.0
         # Use Contrast Loss (w_drl)
-        c_loss = self.contrast(inp, pos, neg, out) 
-        
+        c_loss = self.contrast(norm_inp, norm_pos, norm_neg, norm_out) if self.contrast is not None else 0.0
+
         # 2. VGG Perceptual Loss (NEWLY DEDICATED TERM)
         vgg_percep_loss = 0.0
         if self.w_percep > 0:
              # Calculate L1 distance in VGG feature space
              vgg_percep_loss = self.perceptual(out, pos)
-            
+
         # 3. Deep Supervision Feature Matching Loss (feat_l, m, s)
         feature_match_loss = 0.0
-        
-        if feat_l is not None and feat_m is not None and feat_s is not None:
+
+        if self.gt_feat_extractor is not None and feat_l is not None and feat_m is not None and feat_s is not None:
             # Generate Ground Truth Feature Targets
             gt_feat_l, gt_feat_m, gt_feat_s = self.gt_feat_extractor(pos)
-            
+
             # Use L1 Loss for deep supervision
             feature_match_loss += self.l1_loss(feat_l, gt_feat_l)
             feature_match_loss += self.l1_loss(feat_m, gt_feat_m)
             feature_match_loss += self.l1_loss(feat_s, gt_feat_s)
-            
+
             # Normalize by the number of feature maps
             feature_match_loss /= 3.0
-            
+
         # 4. Combine All Losses
-        total_loss = (self.w_sl1 * smooth_loss_l1 + 
-                      self.w_msssim * msssim_loss + 
+        total_loss = (self.w_sl1 * smooth_loss_l1 +
+                      self.w_msssim * msssim_loss +
                       self.w_drl * c_loss + # Contrast Loss
                       self.w_percep * vgg_percep_loss + # VGG Perceptual Loss
                       self.w_feat_match * feature_match_loss) # Deep Supervision Feature Loss
-        
+
         return total_loss

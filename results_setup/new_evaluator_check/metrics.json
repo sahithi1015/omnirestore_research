@@ -1,0 +1,103 @@
+{
+  "dataset": "gy65896/CDD-11 official test",
+  "pair_count": 1,
+  "class_counts": {
+    "haze": 1
+  },
+  "settings": {
+    "root": "results_setup/fixture",
+    "output": "results_setup/new_evaluator_check",
+    "batch_size": 1,
+    "size": 224,
+    "max_per_class": null,
+    "conditioning": "both",
+    "shifted": false,
+    "device": "cuda"
+  },
+  "elapsed_seconds": 0.6817595000029542,
+  "metrics": {
+    "input_psnr": {
+      "finite_mean": 11.827133682622454,
+      "finite_count": 1,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "input_ssim": {
+      "finite_mean": 0.4313622948020033,
+      "finite_count": 1,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "image_psnr": {
+      "finite_mean": 13.842728161488786,
+      "finite_count": 1,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "image_ssim": {
+      "finite_mean": 0.4588182134143461,
+      "finite_count": 1,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "fused_psnr": {
+      "finite_mean": 18.691339683836667,
+      "finite_count": 1,
+      "infinite_count": 0,
+      "nan_count": 0
+    },
+    "fused_ssim": {
+      "finite_mean": 0.5060575391995441,
+      "finite_count": 1,
+      "infinite_count": 0,
+      "nan_count": 0
+    }
+  },
+  "per_class": {
+    "haze": {
+      "input_psnr": {
+        "finite_mean": 11.827133682622454,
+        "finite_count": 1,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "input_ssim": {
+        "finite_mean": 0.4313622948020033,
+        "finite_count": 1,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_psnr": {
+        "finite_mean": 13.842728161488786,
+        "finite_count": 1,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "image_ssim": {
+        "finite_mean": 0.4588182134143461,
+        "finite_count": 1,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_psnr": {
+        "finite_mean": 18.691339683836667,
+        "finite_count": 1,
+        "infinite_count": 0,
+        "nan_count": 0
+      },
+      "fused_ssim": {
+        "finite_mean": 0.5060575391995441,
+        "finite_count": 1,
+        "infinite_count": 0,
+        "nan_count": 0
+      }
+    }
+  },
+  "lpips": "not measured: package/weights unavailable",
+  "assumptions": [
+    "ImageNet-normalized evaluator pipeline preserved",
+    "prototype labels follow source row order; learned semantics unverified",
+    "shift setting is explicit but historical setting unknown"
+  ],
+  "paper_reproduction": false
+}

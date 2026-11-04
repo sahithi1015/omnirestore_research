@@ -1,0 +1,31 @@
+{
+  "conditioning": "image",
+  "weather": null,
+  "device": "cuda",
+  "processing_size": [
+    224,
+    224
+  ],
+  "input_size": [
+    720,
+    1080
+  ],
+  "output_size": [
+    720,
+    1080
+  ],
+  "elapsed_seconds": 0.044216300011612475,
+  "has_clean_reference": false,
+  "metrics_8bit_png": [
+    [
+      "Input",
+      "Needs clean reference",
+      "Needs clean reference"
+    ],
+    [
+      "Restored PNG",
+      "Needs clean reference",
+      "Needs clean reference"
+    ]
+  ]
+}

@@ -5,6 +5,10 @@
 # Includes parameter counting and logging.
 # -------------------------------------------------------------------------------------------------
 
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 import argparse
 import torch
 import torch.nn.functional as F
@@ -14,7 +18,7 @@ from tqdm import tqdm
 import numpy as np
 import csv
 import os
-import json 
+import json
 from datetime import datetime
 from itertools import product
 from utils.dataset_loader import load_combined_dataset
@@ -32,7 +36,7 @@ def count_parameters(model):
 def train_embedder(
     model, train_loader: DataLoader, val_loader: DataLoader,
     optimizer: torch.optim.Optimizer,
-    scheduler: ReduceLROnPlateau, 
+    scheduler: ReduceLROnPlateau,
     device: torch.device,
     epochs: int,
     class_loss_weight: float,
@@ -44,7 +48,7 @@ def train_embedder(
 ):
     best_val_loss = float('inf')
     epochs_since_improvement = 0
-    
+
     # Save run config to a separate JSON file for clean logging
     run_config_path = csv_log_path.replace(".csv", ".json")
     with open(run_config_path, 'w') as f:
@@ -54,27 +58,27 @@ def train_embedder(
     with open(csv_log_path, "w", newline='') as csvfile:
         fieldnames = [
             "epoch", "train_total_loss", "train_class_loss", "train_contrastive_loss", "train_acc",
-            "val_total_loss", "val_class_loss", "val_contrastive_loss", "val_acc", "current_lr" 
+            "val_total_loss", "val_class_loss", "val_contrastive_loss", "val_acc", "current_lr"
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        
+
         use_contrastive = contrastive_weight > 0.0
 
         for epoch in range(epochs):
             current_lr = optimizer.param_groups[0]['lr']
-            
+
             model.train()
             train_total_loss_accum = 0.0
             class_losses = []
-            contrastive_losses = [] 
+            contrastive_losses = []
             accs = []
-            
+
             # TQDM on train loader
             for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} (Train)"):
                 imgs = batch['input'].to(device)
                 labels = batch['wid'].to(device)
-                
+
                 max_label_index = model.text_embeddings.shape[0] - 1
                 assert (labels >= 0).all() and (labels <= max_label_index).all(), (
                     f"Label indices out of range! Labels min: {labels.min().item()}, max: {labels.max().item()}, "
@@ -82,20 +86,20 @@ def train_embedder(
                 )
 
                 optimizer.zero_grad()
-                
+
                 total_loss, class_loss, contrastive_loss = model.total_loss(
-                    imgs, labels, 
+                    imgs, labels,
                     contrastive=use_contrastive,
                     return_components=True
                 )
-                
+
                 # Backpropagate the total loss
                 total_loss.backward()
                 optimizer.step()
-                
+
                 # Manually calculate accuracy for logging purposes
                 with torch.no_grad():
-                    preds = model.classify(imgs) 
+                    preds = model.classify(imgs)
                     pred_labels = preds.argmax(dim=1)
                     acc = (pred_labels == labels).float().mean().item()
 
@@ -108,7 +112,7 @@ def train_embedder(
             avg_class_loss = np.mean(class_losses)
             avg_contrastive_loss = np.mean(contrastive_losses)
             avg_acc = np.nanmean(accs)
-            
+
             print(f"Epoch {epoch+1} Train Total Loss: {avg_train_total_loss:.4f} | Class Loss: {avg_class_loss:.4f} | Contrastive Loss: {avg_contrastive_loss:.4f} | Acc: {avg_acc:.4f} | LR: {current_lr:.2e}")
 
             # Validation loop
@@ -123,23 +127,23 @@ def train_embedder(
                 with torch.no_grad():
                     imgs = batch['input'].to(device)
                     labels = batch['wid'].to(device)
-                    
+
                     max_label_index = model.text_embeddings.shape[0] - 1
                     assert (labels >= 0).all() and (labels <= max_label_index).all(), (
                         f"Validation labels out of range! Labels min: {labels.min().item()}, max: {labels.max().item()}, "
                         f"expected max: {max_label_index}"
                     )
-                    
+
                     total_loss, class_loss, contrastive_loss = model.total_loss(
-                        imgs, labels, 
-                        contrastive=use_contrastive, 
+                        imgs, labels,
+                        contrastive=use_contrastive,
                         return_components=True
                     )
-                    
+
                     val_total_loss_accum += float(total_loss.item())
                     val_class_losses.append(class_loss.item())
                     val_contrastive_losses.append(contrastive_loss.item() if use_contrastive else 0.0)
-                    
+
                     preds = model.classify(imgs)
                     pred_labels = preds.argmax(dim=1)
                     acc = (pred_labels == labels).float().mean().item()
@@ -149,9 +153,9 @@ def train_embedder(
             avg_val_class_loss = np.mean(val_class_losses)
             avg_val_contrastive_loss = np.mean(val_contrastive_losses)
             avg_val_acc = np.nanmean(val_acc)
-            
+
             print(f"Epoch {epoch+1} Val Total Loss: {avg_val_total_loss:.4f} | Class Loss: {avg_val_class_loss:.4f} | Contrastive Loss: {avg_val_contrastive_loss:.4f} | Acc: {avg_val_acc:.4f}")
-            
+
             writer.writerow({
                 "epoch": epoch + 1,
                 "train_total_loss": avg_train_total_loss,
@@ -173,7 +177,7 @@ def train_embedder(
                 best_val_loss = avg_val_total_loss
                 epochs_since_improvement = 0
                 # Saving model state dictionary with a .pt extension for the embedder
-                torch.save(model.state_dict(), csv_log_path.replace(".csv", ".pt")) 
+                torch.save(model.state_dict(), csv_log_path.replace(".csv", ".pt"))
                 print(f"Saved best model at epoch {epoch+1} with total loss: {best_val_loss:.4f}")
             else:
                 epochs_since_improvement += 1
@@ -212,15 +216,15 @@ if __name__ == "__main__":
 
     # Use a dummy root for ACDC when training without it
     acdc_root_path = args.acdc_root if args.acdc_root != 'DUMMY_PATH' else None
-    
+
     for backbone, lr, optimizer_name, batch_sz, class_w, contrast_w, temp in product(
-        args.embedder_modes, args.learning_rates, args.optimizers, args.batch_sizes, 
+        args.embedder_modes, args.learning_rates, args.optimizers, args.batch_sizes,
         args.class_loss_weights, args.contrastive_weights, args.temperatures):
-        
+
         # 1. Initialize Model
         model = build_embedder(
-            backbone=backbone, 
-            out_dim=EMBEDDING_DIM, 
+            backbone=backbone,
+            out_dim=EMBEDDING_DIM,
             class_loss_weight=class_w,
             contrastive_weight=contrast_w,
             temperature=temp
@@ -228,26 +232,25 @@ if __name__ == "__main__":
 
         # 🟢 NEW: Calculate and print model size (Total Trainable Parameters)
         total_params = count_parameters(model)
-        
+
         print(f"\n--- Starting Run: {backbone} | Params: {total_params/1e6:.2f}M | LR: {lr:.2e} ---")
 
         # 2. Load dataset loaders
         train_loader, val_loader, _, _ = load_combined_dataset(
-            acdc_root=acdc_root_path, 
             cdd_train_root=args.cdd_train_root,
             batch_size=batch_sz,
             distributed=False,
         )
-        
+
         if optimizer_name.lower() in optimizer_map:
             optimizer = optimizer_map[optimizer_name.lower()](model.parameters(), lr)
         else:
             raise ValueError("Unsupported optimizer: " + optimizer_name)
-        
+
         scheduler = ReduceLROnPlateau(
-            optimizer, 
-            mode='min', 
-            factor=0.5, 
+            optimizer,
+            mode='min',
+            factor=0.5,
             patience=3,
             min_lr=1e-7,
         )
@@ -257,7 +260,7 @@ if __name__ == "__main__":
         run_name = (f"embedder_{backbone}_bs{batch_sz}_opt{optimizer_name}_lr{lr:.2e}_"
                     f"cw{class_w}_conw{contrast_w}_temp{temp}_{timestamp}.csv")
         csv_log_path = os.path.join(args.logdir, run_name)
-        
+
         run_config = {
             "lr": lr, "optimizer": optimizer_name, "batch_size": batch_sz, "class_loss_weight": class_w,
             "contrastive_weight": contrast_w, "temperature": temp, "epochs": args.epochs,
@@ -275,8 +278,8 @@ if __name__ == "__main__":
 
         model.eval()
         with torch.no_grad():
-            img_emb = model.embed_for_style_transfer(imgs) 
-            
+            img_emb = model.embed_for_style_transfer(imgs)
+
             print(f"Sample visual embedding shape: {img_emb.shape}")
             print(f"Sample visual embedding (first vector): {img_emb[0][:5].tolist()}...")
 
@@ -290,10 +293,10 @@ if __name__ == "__main__":
 
         train_embedder(
             model, train_loader, val_loader, optimizer, scheduler, device, args.epochs,
-            class_loss_weight=class_w, 
+            class_loss_weight=class_w,
             contrastive_weight=contrast_w,
             temperature=temp,
-            csv_log_path=csv_log_path, 
+            csv_log_path=csv_log_path,
             run_config=run_config,
             early_stop_patience=args.patience
         )

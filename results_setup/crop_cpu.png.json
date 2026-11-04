@@ -1,0 +1,30 @@
+{
+  "input": "results_setup/fixture/test/haze/figure_crop.png",
+  "output": "results_setup/crop_cpu.png",
+  "embedder_model_path": "logs/embedder_resnet18_bs64_optadamw_lr1.00e-05_cw1.0_conw0.1_temp0.07_20260101-190539.pt",
+  "best_ckpt": "ckpts/best.ckpt",
+  "device": "cpu",
+  "height": 32,
+  "width": 32,
+  "conditioning": "image",
+  "weather": null,
+  "shifted": false,
+  "original_size": false,
+  "input_size": [
+    150,
+    150
+  ],
+  "output_size": [
+    32,
+    32
+  ],
+  "elapsed_seconds_including_transfer": 1.2772717000043485,
+  "checkpoint_load": "strict for all executed tensors",
+  "unused_kan_tensors": 11,
+  "assumptions": [
+    "shift setting unverified",
+    "prototype names use released source row order",
+    "ImageNet preprocessing preserved from released evaluator"
+  ],
+  "benchmark_validation": false
+}

@@ -23,7 +23,7 @@ import numbers
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from einops import rearrange
+from model.tensor_ops import rearrange
 
 
 # -------------------------

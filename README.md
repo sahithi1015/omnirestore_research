@@ -1,5 +1,7 @@
 # [CVPRW 2026] OmniRestore: A Parameter-Efficient Framework for Universal Adverse-Weather Image Restoration
 
+> **Local UI and verified comparison:** Run `.\.venv\Scripts\python.exe gradio_app.py` and open http://127.0.0.1:7860 to upload your own images. See [README_COMPARISON.md](README_COMPARISON.md) for current execution PSNR/SSIM versus the owner-reported values below, test settings, and usage instructions.
+
 [Paper](https://openaccess.thecvf.com/content/CVPR2026W/NTIRE/papers/Njoku_OmniRestore_A_Parameter-Efficient_Framework_for_Universal_Adverse-Weather_Image_Restoration_CVPRW_2026_paper.pdf) | [Supplementary](https://openaccess.thecvf.com/content/CVPR2026W/NTIRE/supplemental/Njoku_OmniRestore_A_Parameter-Efficient_CVPRW_2026_supplemental.pdf) | [Project Page](https://judith989.github.io/CVPRW2026_OmniRestore/) | [Poster](https://judith989.github.io/CVPRW2026_OmniRestore/assets/poster.png) | [LinkedIn](https://www.linkedin.com/in/judith989/)
 
 ## OmniRestore: A Parameter-Efficient Framework for Universal Adverse-Weather Image Restoration

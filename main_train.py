@@ -1,3 +1,8 @@
+from utils.ckpt_utils import safe_load
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 import os
 import time
 import torch
@@ -9,23 +14,23 @@ from utils.ckpt_utils import load_restore_ckpt_with_optim, save_checkpoint
 from utils.utils import print_args, adjust_learning_rate, tensor_metric, load_excel, seed_all
 from utils.losses import Total_loss
 from model.embedder import build_embedder
-from model.wadt_net import WADNet 
+from model.wadt_net import WADNet
 
 # --- Helper function for list-to-tensor conversion ---
 def _safely_to_device(data, device):
     """Handles lists of tensors by stacking them and safely filtering out None elements."""
     if isinstance(data, list):
         non_none_data = [item for item in data if item is not None]
-        
+
         if not non_none_data:
-            return torch.empty(0).to(device) 
+            return torch.empty(0).to(device)
 
         return torch.stack(non_none_data).to(device)
-        
+
     elif isinstance(data, torch.Tensor):
         return data.to(device)
-        
-    return data 
+
+    return data
 
 # --------------------------------------------------------------------------
 
@@ -34,39 +39,39 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print('✨ > Model Initialization...')
-    
+
     # 1. Initialize and Freeze Embedder (Source of E: [B, 512])
-    embedder_ckpt = torch.load(args.embedder_model_path, map_location=device)
+    embedder_ckpt = safe_load(args.embedder_model_path)
     embedder_state = embedder_ckpt.get('state_dict', embedder_ckpt)
-    embedder = build_embedder(backbone=args.type_name, out_dim=512).to(device)
-    embedder.load_state_dict(embedder_state)
+    embedder = build_embedder(checkpoint=args.embedder_model_path, backbone=args.type_name, out_dim=512).to(device)
+    embedder.load_pretrained_state(embedder_state)
     for param in embedder.parameters():
         param.requires_grad = False
     embedder.eval()
 
     # 2. Initialize Trainable Components
-    projection = nn.Linear(1024, 512).to(device) 
-    bottleneck = nn.Identity().to(device) 
+    projection = nn.Linear(1024, 512).to(device)
+    bottleneck = nn.Identity().to(device)
 
-    # 3. WADNet restorer initialization 
+    # 3. WADNet restorer initialization
     models_to_load = {
-        'restorer': WADNet(channel=16, embed_dim=512), 
+        'restorer': WADNet(channel=16, embed_dim=512),
         'projection': projection,
-        'bottleneck': bottleneck 
+        'bottleneck': bottleneck
     }
-    
+
     # Load checkpoint and optimizer state
     # NOTE: The 'weight_decay' argument MUST be REMOVED from the load_restore_ckpt_with_optim call
     # since that function signature does not contain it.
     restorer, projection, bottleneck, optimizer, cur_epoch = load_restore_ckpt_with_optim(
         device,
-        models_to_load=models_to_load, 
+        models_to_load=models_to_load,
         local_rank=None,
         freeze_model=False,
         ckpt_name=args.restore_model_path,
         lr=args.lr # Only arguments accepted by the utility function are passed here
     )
-    
+
     # 🟢 CRITICAL FIX: Manually apply weight_decay to ALL parameter groups after loading/creation.
     for param_group in optimizer.param_groups:
         param_group['weight_decay'] = args.weight_decay
@@ -84,77 +89,82 @@ def main(args):
     projection = projection.to(device)
 
     # Loss initialization
-    loss = Total_loss(args, device=device) 
-    
+    loss = Total_loss(args, device=device)
+
     print('💾 > Loading dataset...')
-    
+
     train_loader, val_loader, _, _ = load_combined_dataset(
-        acdc_root=args.acdc_root if args.acdc_root != "DUMMY_PATH" else None,
         cdd_train_root=args.cdd_train_root if args.cdd_train_root != "DUMMY_PATH" else None,
         cdd_val_ratio=0.1,
         batch_size=args.bs,
         workers=args.num_works,
         distributed=False,
-        image_size=args.image_size, 
+        image_size=args.image_size,
     )
 
     print('🚀 > Start training...')
     start_all = time.time()
-    train(restorer, embedder, projection, bottleneck, optimizer, loss, cur_epoch, 
+    train(restorer, embedder, projection, bottleneck, optimizer, loss, cur_epoch,
           args, train_loader, val_loader, device)
     end_all = time.time()
     print(f'Whole Training Time: {end_all - start_all:.2f}s.')
 
 
-def train(restorer, embedder, projection, bottleneck, optimizer, loss, 
+def pixel_space(x):
+    mean = x.new_tensor([0.485, 0.456, 0.406])[None, :, None, None]
+    std = x.new_tensor([0.229, 0.224, 0.225])[None, :, None, None]
+    return (x * std + mean).clamp(0, 1)
+
+
+def train(restorer, embedder, projection, bottleneck, optimizer, loss,
           cur_epoch, args, train_loader, val_loader, device):
     metrics = []
-    best_psnr = float('-inf')
+    best_psnr = float(safe_load(args.restore_model_path).get('psnr', float('-inf'))) if args.restore_model_path else float('-inf')
     epochs_no_improve = 0
     patience = 5
 
     for epoch in range(cur_epoch, args.epoch):
         optimizer = adjust_learning_rate(optimizer, epoch, args.adjust_lr)
         learnrate = optimizer.param_groups[-1]['lr']
-        
+
         restorer.train()
-        projection.train() 
-        bottleneck.train() 
+        projection.train()
+        bottleneck.train()
 
         for i, batch in enumerate(train_loader):
-            pos = _safely_to_device(batch['target'], device) 
-            inp = _safely_to_device(batch['input'], device) 
-            
+            pos = _safely_to_device(batch['target'], device)
+            inp = _safely_to_device(batch['input'], device)
+
             if pos.numel() == 0 or inp.numel() == 0:
                 print(f"Skipping batch {i} due to empty/None samples.")
                 continue
-                
+
             style_names = batch["source_weather"]
 
             # 1. Compute and fuse embeddings
             with torch.no_grad():
                 text_emb = embedder.embed_text_for_style(style_names)
                 img_emb = embedder.embed_for_style_transfer(inp)
-            
+
             fused_emb = torch.cat([text_emb, img_emb], dim=-1)
             proj_512 = projection(fused_emb)
             proj_emb = bottleneck(proj_512)
-            
+
             # 2. Forward pass through restorer
             out, feat_l, feat_m, feat_s = restorer(inp, proj_emb)
 
             optimizer.zero_grad()
-            
+
             # 3. Calculate Loss
             total_loss = loss(inp, pos, inp, out, feat_l=feat_l, feat_m=feat_m, feat_s=feat_s)
-            
+
             total_loss.backward()
             optimizer.step()
 
             # Metrics calculation
-            mse = tensor_metric(pos, out, 'MSE', data_range=1)
-            psnr = tensor_metric(pos, out, 'PSNR', data_range=1)
-            ssim = tensor_metric(pos, out, 'SSIM', data_range=1)
+            mse = tensor_metric(pixel_space(pos), pixel_space(out), 'MSE', data_range=1)
+            psnr = tensor_metric(pixel_space(pos), pixel_space(out), 'PSNR', data_range=1)
+            ssim = tensor_metric(pixel_space(pos), pixel_space(out), 'SSIM', data_range=1)
 
             if (i + 1) % 10 == 0:
                 print(f"[epoch {epoch + 1}][{i + 1}/{len(train_loader)}] "
@@ -172,13 +182,13 @@ def train(restorer, embedder, projection, bottleneck, optimizer, loss,
         if psnr_t1 > best_psnr:
             best_psnr = psnr_t1
             epochs_no_improve = 0
-            
+
             models_to_save = {
                 'restorer': restorer,
                 'projection': projection,
                 'bottleneck': bottleneck
             }
-            
+
             save_checkpoint(
                 models_to_save,
                 optimizer,
@@ -199,24 +209,24 @@ def train(restorer, embedder, projection, bottleneck, optimizer, loss,
 def test(args, restorer, embedder, projection, bottleneck, val_loader, device, epoch=-1):
     psnr_1, ssim_1, count = 0, 0, 0
     restorer.eval()
-    projection.eval() 
-    bottleneck.eval() 
+    projection.eval()
+    bottleneck.eval()
     os.makedirs(args.output, exist_ok=True)
 
     with torch.no_grad():
         for batch in val_loader:
             pos = _safely_to_device(batch['target'], device)
             inp = _safely_to_device(batch['input'], device)
-            
+
             if pos.numel() == 0 or inp.numel() == 0:
                 continue
-                
+
             style_names = batch["source_weather"]
 
             text_emb = embedder.embed_text_for_style(style_names)
             img_emb = embedder.embed_for_style_transfer(inp)
             fused_emb = torch.cat([text_emb, img_emb], dim=-1)
-            
+
             proj_512 = projection(fused_emb)
             proj_emb = bottleneck(proj_512)
 
@@ -225,11 +235,11 @@ def test(args, restorer, embedder, projection, bottleneck, val_loader, device, e
             if count == 0 and (epoch % 20 == 0 or epoch == -1):
                 for j in range(min(inp.shape[0], 4)):
                     fn = os.path.basename(str(batch["file"][j])).replace(".png", f"_epoch{epoch}.png")
-                    imwrite(torch.cat((inp[j:j+1], out[j:j+1], pos[j:j+1]), dim=3),
+                    imwrite(torch.cat((pixel_space(inp[j:j+1]), pixel_space(out[j:j+1]), pixel_space(pos[j:j+1])), dim=3),
                                           os.path.join(args.output, fn))
 
-            psnr_1 += tensor_metric(pos, out, 'PSNR', data_range=1) * inp.shape[0]
-            ssim_1 += tensor_metric(pos, out, 'SSIM', data_range=1) * inp.shape[0]
+            psnr_1 += tensor_metric(pixel_space(pos), pixel_space(out), 'PSNR', data_range=1) * inp.shape[0]
+            ssim_1 += tensor_metric(pixel_space(pos), pixel_space(out), 'SSIM', data_range=1) * inp.shape[0]
             count += inp.shape[0]
 
     return psnr_1 / max(1, count), ssim_1 / max(1, count)
@@ -237,7 +247,7 @@ def test(args, restorer, embedder, projection, bottleneck, val_loader, device, e
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="WADNet Training")
-    
+
     # Argument Definitions
     parser.add_argument("--embedder-model-path", type=str, required=True, help='embedder model path')
     parser.add_argument("--restore-model-path", type=str, default=None, help='restore model path')
@@ -252,19 +262,19 @@ if __name__ == '__main__':
     parser.add_argument("--output", type=str, required=True, help='output folder')
     parser.add_argument("--type_name", type=str, default="resnet18", help="embedder backbone")
     parser.add_argument("--seed", type=int, default=123, help="random seed")
-    parser.add_argument("--image_size", nargs=2, type=int, default=[224, 224], 
+    parser.add_argument("--image_size", nargs=2, type=int, default=[224, 224],
                              help="Image size [H, W] for model input.")
 
     # 🟢 CRITICAL ADDITION: Weight Decay for stabilization
-    parser.add_argument("--weight-decay", type=float, default=1e-4, 
+    parser.add_argument("--weight-decay", type=float, default=1e-4,
                              help='Weight decay (L2 regularization) for optimizer.')
-                             
+
     # Loss Weights
     parser.add_argument("--loss_weight", nargs=4, type=float,
-                             default=[1.0, 0.5, 0.5, 0.5], 
+                             default=[1.0, 0.5, 0.5, 0.5],
                              help="Weights for L1/SL1, MSSSIM, Perceptual Loss, and Feature Matching (DRL) losses")
 
     args = parser.parse_args()
-    args.image_size = tuple(args.image_size) 
+    args.image_size = tuple(args.image_size)
     print_args(args)
     main(args)

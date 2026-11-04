@@ -1,0 +1,10 @@
+{
+  "example_loaded_with_reference": true,
+  "browser_restoration": true,
+  "png_download": true,
+  "benchmark_table_visible": true,
+  "mobile_overflow": false,
+  "benchmark_mobile_overflow": false,
+  "javascript_errors": [],
+  "mobile_stacked_columns": true
+}

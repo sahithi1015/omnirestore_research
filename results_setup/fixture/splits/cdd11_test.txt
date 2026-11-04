@@ -1,0 +1,1 @@
+test/haze/figure_crop.png test/clear/figure_crop.png haze

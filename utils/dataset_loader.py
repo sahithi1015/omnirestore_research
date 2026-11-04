@@ -20,7 +20,7 @@ import torchvision.transforms.functional as TF
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD  = [0.229, 0.224, 0.225]
 
-# Keep WEATHER2ID only for severity logic 
+# Keep WEATHER2ID only for severity logic
 WEATHER2ID = {
     "clear": 0, "snow": 1, "rain": 2, "fog": 3, "night": 4, "haze": 5, "low": 6
 }
@@ -39,11 +39,8 @@ CDD11_FOLDER2WEATHER = {
 }
 
 # CDD-11 only classes (12)
-STYLE_LABELS = [
-    "clear", "haze", "haze_rain", "haze_snow",
-    "low", "low_haze", "low_haze_rain", "low_haze_snow",
-    "low_rain", "low_snow", "rain", "snow",
-]
+from model.labels import LABELS
+STYLE_LABELS = list(LABELS)
 STYLE2ID = {name: idx for idx, name in enumerate(STYLE_LABELS)}
 
 
@@ -140,10 +137,12 @@ def make_cdd11_split(root: str, out_dir: Optional[str] = None, val_ratio: float 
                 rel_clear = clear_index[key]
                 samples.append((rel_deg, rel_clear, folder))
 
-    random.Random(seed).shuffle(samples)
-    n_val = int(len(samples) * max(0.0, min(1.0, val_ratio)))
-    val_samples   = samples[:n_val]
-    train_samples = samples[n_val:]
+    scenes = sorted({clear for _, clear, _ in samples})
+    random.Random(seed).shuffle(scenes)
+    n_val = int(len(scenes) * max(0.0, min(1.0, val_ratio)))
+    val_scenes = set(scenes[:n_val])
+    val_samples = [sample for sample in samples if sample[1] in val_scenes]
+    train_samples = [sample for sample in samples if sample[1] not in val_scenes]
 
     def _write(fn, arr):
         with open(fn, "w") as f:
@@ -347,7 +346,8 @@ class CDD11Dataset(Dataset):
 
         wid = self.wids[i]
         weather = CDD11_FOLDER2WEATHER.get(folder, "clear")
-        sev = estimate_severity(x, weather)
+        raw = x * x.new_tensor(IMAGENET_STD)[:, None, None] + x.new_tensor(IMAGENET_MEAN)[:, None, None] if self.transform.normalize else x
+        sev = estimate_severity(raw, weather)
 
         return {
             "input": x,
@@ -388,7 +388,7 @@ def _get_benchmark_size(cdd_root: str, split: str, normalize: bool) -> Optional[
 
 
 # =========================
-# CDD-11 loader 
+# CDD-11 loader
 # =========================
 def load_combined_dataset(
     cdd_train_root: Optional[str],
@@ -493,7 +493,7 @@ def load_combined_dataset(
             image_size=image_size,
             transform=val_transform,
             normalize=normalize,
-            max_samples_per_class=BENCHMARK_SIZE_TEST
+            max_samples_per_class=None
         )
 
         if len(c_test) > 0:
@@ -532,9 +532,9 @@ def load_combined_dataset(
         val_sampler = _maybe_build_sampler(val_ds, distributed, shuffle=False)
         val_loader = DataLoader(
             val_ds,
-            batch_size=max(1, batch_size // 2),
+            batch_size=batch_size,
             sampler=val_sampler,
-            num_workers=max(1, workers // 2),
+            num_workers=workers,
             pin_memory=True,
             collate_fn=collate_fn,
             drop_last=False
@@ -546,9 +546,9 @@ def load_combined_dataset(
         test_sampler = _maybe_build_sampler(test_ds, distributed, shuffle=False)
         test_loader = DataLoader(
             test_ds,
-            batch_size=max(1, batch_size // 2),
+            batch_size=batch_size,
             sampler=test_sampler,
-            num_workers=max(1, workers // 2),
+            num_workers=workers,
             pin_memory=True,
             collate_fn=collate_fn,
             drop_last=False

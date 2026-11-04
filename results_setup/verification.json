@@ -1,0 +1,9 @@
+{
+  "python_sources_parsed": 23,
+  "original_checkpoint_sha256": {
+    "ckpts\\best.ckpt": "dd54ff6f79f87265d1934f12b7d27a63366b04012aaf6ebfb7a0e61ed5cd09a3",
+    "logs\\embedder_resnet18_bs64_optadamw_lr1.00e-05_cw1.0_conw0.1_temp0.07_20260101-190539.pt": "2124294c25866c382dc45283f6a0fab7cf0f1967dc7f25120afbfdabe3a8a2d8"
+  },
+  "fixture_only": true,
+  "full_dataset_missing": true
+}

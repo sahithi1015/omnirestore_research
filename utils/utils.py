@@ -12,9 +12,9 @@ import torch
 import torch.nn.functional as F
 import pandas as pd
 
-from skimage.metrics import peak_signal_noise_ratio as compare_psnr
-from skimage.metrics import mean_squared_error as compare_mse
-from skimage.metrics import structural_similarity as compare_ssim
+from utils.metrics import peak_signal_noise_ratio as compare_psnr
+from utils.metrics import mean_squared_error as compare_mse
+from utils.metrics import structural_similarity as compare_ssim
 
 
 # -----------------------------------------------------------------------------
@@ -84,7 +84,7 @@ def tensor_metric(img: torch.Tensor, imclean: torch.Tensor, model: str, data_ran
                 img_cpu[i],
                 data_range=data_range,
                 channel_axis=-1,  # channel last for HWC format
-                win_size=3       # smaller window size to handle small images
+                win_size=7       # same SSIM window used by the paired evaluators
             )
         else:
             print('tensor_metric: Model False! Model should be PSNR, MSE or SSIM')
@@ -95,8 +95,11 @@ def tensor_metric(img: torch.Tensor, imclean: torch.Tensor, model: str, data_ran
 # -----------------------------------------------------------------------------
 def load_excel(x):
     df = pd.DataFrame(x)
-    with pd.ExcelWriter('./metric_result.xlsx') as writer:
-        df.to_excel(writer, sheet_name='PSNR-SSIM', float_format='%.5f')
+    try:
+        with pd.ExcelWriter('./metric_result.xlsx') as writer:
+            df.to_excel(writer, sheet_name='PSNR-SSIM', float_format='%.5f')
+    except ImportError:
+        df.to_csv('./metric_result.csv', index=False, float_format='%.5f')
 
 
 # -----------------------------------------------------------------------------

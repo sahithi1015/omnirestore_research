@@ -1,0 +1,31 @@
+{
+  "conditioning": "fused",
+  "weather": "haze",
+  "device": "cuda",
+  "processing_size": [
+    224,
+    224
+  ],
+  "input_size": [
+    720,
+    1080
+  ],
+  "output_size": [
+    224,
+    224
+  ],
+  "elapsed_seconds": 0.4384756999788806,
+  "has_clean_reference": true,
+  "metrics_8bit_png": [
+    [
+      "Input",
+      "15.4481",
+      "0.805866"
+    ],
+    [
+      "Restored PNG",
+      "29.1932",
+      "0.988907"
+    ]
+  ]
+}

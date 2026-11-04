@@ -1,0 +1,2 @@
+file,weather,input_psnr,input_ssim,image_psnr,image_ssim,fused_psnr,fused_ssim
+test\haze\figure_crop.png,haze,11.827133682622454,0.4313622948020033,13.842728161488786,0.4588182134143461,18.691339683836667,0.5060575391995441

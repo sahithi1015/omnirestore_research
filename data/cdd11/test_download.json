@@ -1,0 +1,19 @@
+{
+  "repository": "https://huggingface.co/datasets/gy65896/CDD-11",
+  "archive_url": "https://huggingface.co/datasets/gy65896/CDD-11/resolve/main/test.zip?download=true",
+  "metadata": {
+    "type": "file",
+    "oid": "da386c5653fbb76fa144c6e8df873600d9891a49",
+    "size": 3770337157,
+    "lfs": {
+      "oid": "421567fceda89659a6d047fc78d82f77c68703203336d9c795213ba7096646dc",
+      "size": 3770337157,
+      "pointerSize": 135
+    },
+    "xetHash": "595efe141e423a5a460f3bb0922bdbd732c9494ffee5b64078000fb492ebce30",
+    "path": "test.zip"
+  },
+  "split": "test",
+  "status": "downloaded_verified_extracted",
+  "unique_referenced_images": 2400
+}

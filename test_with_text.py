@@ -1,5 +1,6 @@
+from utils.ckpt_utils import safe_load
 # test_with_text.py
-# Full test-set evaluation 
+# Full test-set evaluation
 # and using fused embedding EXACTLY like training:
 #   text_emb = embedder.embed_text_for_style(style_names)
 #   img_emb  = embedder.embed_for_style_transfer(inp)
@@ -8,8 +9,13 @@
 #
 # Loads restorer + projection + bottleneck from best.ckpt
 
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 import os, time, argparse
 import numpy as np
+from utils.metrics import make_lpips
 
 import torch
 import torch.nn as nn
@@ -20,9 +26,9 @@ from utils.dataset_loader import load_combined_dataset, IMAGENET_MEAN, IMAGENET_
 from model.wadt_net import WADNet
 from model.embedder import build_embedder
 
-from skimage.metrics import peak_signal_noise_ratio as compute_psnr
-from skimage.metrics import structural_similarity as compute_ssim
-import lpips
+from utils.metrics import peak_signal_noise_ratio as compute_psnr
+from utils.metrics import structural_similarity as compute_ssim
+
 
 
 # -------------------------
@@ -45,7 +51,7 @@ def strip_module(state_dict):
 def safe_torch_load(path: str, device):
     # PyTorch 2.6+ defaults weights_only=True; your ckpt is trusted, so load weights_only=False.
     try:
-        return torch.load(path, map_location=device, weights_only=False)
+        return safe_load(path, device)
     except TypeError:
         return torch.load(path, map_location=device)
 
@@ -190,7 +196,7 @@ def evaluate_loader(args, loader, restorer, embedder, projection, bottleneck, lp
             psnr_out_all.append(psnr_out); ssim_out_all.append(ssim_out); lp_out_all.append(lp_out)
 
             if (args.save_n is not None) and (saved < args.save_n):
-                fn = os.path.basename(str(files[b]))
+                fn = str(batch["source_weather"][b]) + "_" + os.path.basename(str(files[b]))
                 if not fn:
                     fn = f"sample_{len(psnr_out_all):06d}.png"
                 # concat: input | output | gt
@@ -207,16 +213,16 @@ def evaluate_loader(args, loader, restorer, embedder, projection, bottleneck, lp
         if finite.sum() == 0:
             return float("nan"), 0, len(x)
         return float(x[finite].mean()), int((~finite).sum()), len(x)
-    
+
     psnr_in_mean, psnr_in_inf, psnr_in_total = mean_finite(psnr_in_all)
     psnr_out_mean, psnr_out_inf, psnr_out_total = mean_finite(psnr_out_all)
-    
+
     print("\n====== AVERAGES (FULL TEST SET, FUSED TEXT+IMAGE) ======")
     print(f"INPUT  : PSNR={psnr_in_mean:.4f} (inf={psnr_in_inf}/{psnr_in_total}), "
           f"SSIM={float(np.mean(ssim_in_all)):.4f}, LPIPS={float(np.mean(lp_in_all)):.4f}")
     print(f"OUTPUT : PSNR={psnr_out_mean:.4f} (inf={psnr_out_inf}/{psnr_out_total}), "
           f"SSIM={float(np.mean(ssim_out_all)):.4f}, LPIPS={float(np.mean(lp_out_all)):.4f}")
-    
+
     # improvements (PSNR uses finite means)
     print("IMPROV : ΔPSNR={:.4f}, ΔSSIM={:.4f}, ΔLPIPS={:.4f}".format(
         psnr_out_mean - psnr_in_mean,
@@ -230,7 +236,7 @@ def main(args):
 
     # ---- embedder ----
     print("✨ > Loading embedder (frozen)...")
-    embedder = build_embedder(backbone=args.type_name, out_dim=512).to(device)
+    embedder = build_embedder(checkpoint=args.embedder_model_path, backbone=args.type_name, out_dim=512).to(device)
     from utils.ckpt_utils import load_checkpoint_if_any
     load_checkpoint_if_any(embedder, ckpt_path=args.embedder_model_path, map_location=device)
     embedder.eval()
@@ -247,7 +253,7 @@ def main(args):
         use_windowed_sa=(not args.disable_wsa),
     )
 
-    lpips_fn = lpips.LPIPS(net="vgg").to(device).eval()
+    lpips_fn = make_lpips(device)
 
     # ---- test loader (uses your dataset loader, so source_weather exists) ----
     _, _, test_loader, eval_info = load_combined_dataset(
