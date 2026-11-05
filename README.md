@@ -1,13 +1,8 @@
 # [CVPRW 2026] OmniRestore: A Parameter-Efficient Framework for Universal Adverse-Weather Image Restoration
 
-> **Local UI and verified comparison:** Run `.\.venv\Scripts\python.exe gradio_app.py` and open http://127.0.0.1:7860 to upload your own images. See [README_COMPARISON.md](README_COMPARISON.md) for current execution PSNR/SSIM versus the owner-reported values below, test settings, and usage instructions.
-
-[Paper](https://openaccess.thecvf.com/content/CVPR2026W/NTIRE/papers/Njoku_OmniRestore_A_Parameter-Efficient_Framework_for_Universal_Adverse-Weather_Image_Restoration_CVPRW_2026_paper.pdf) | [Supplementary](https://openaccess.thecvf.com/content/CVPR2026W/NTIRE/supplemental/Njoku_OmniRestore_A_Parameter-Efficient_CVPRW_2026_supplemental.pdf) | [Project Page](https://judith989.github.io/CVPRW2026_OmniRestore/) | [Poster](https://judith989.github.io/CVPRW2026_OmniRestore/assets/poster.png) | [LinkedIn](https://www.linkedin.com/in/judith989/)
+A lightweight framework for restoring images affected by rain, haze, snow, low light, and combined degradations. This repository includes pretrained inference, dataset acquisition and validation, and measured CDD-11 evaluation results.
 
 ## OmniRestore: A Parameter-Efficient Framework for Universal Adverse-Weather Image Restoration
-
-**Judith N. Njoku, Diksha Shukla**
-Department of Electrical Engineering & Computer Science, University of Wyoming, USA
 
 Accepted to **CVPR 2026 Workshops, NTIRE**.
 
@@ -25,7 +20,7 @@ Accepted to **CVPR 2026 Workshops, NTIRE**.
 
 ## Abstract
 
-Reliable perception under adverse weather remains a significant challenge for vision systems. While state-of-the-art multi-weather image restoration models achieve strong performance, they often rely on large architectures with high parameter counts, limiting their utility for real-time and edge deployment. To address this efficiency gap, we propose **OmniRestore**, a lightweight multimodal framework specifically designed for adverse-weather image restoration across rain, fog, snow, low-light conditions, and challenging composite degradations.
+Reliable perception under adverse weather remains a significant challenge for vision systems. While state-of-the-art multi-weather image restoration models achieve strong performance, they often rely on large architectures with high parameter counts, limiting their utility for real-time and edge deployment. To address this efficiency gap, **OmniRestore** provides, a lightweight multimodal framework specifically designed for adverse-weather image restoration across rain, fog, snow, low-light conditions, and challenging composite degradations.
 
 OmniRestore consists of two key components: **(i)** a multimodal weather-scene embedder that aligns CLIP-derived text prototypes with image features via a ResNet encoder, refined offline by a Kolmogorov-Arnold Network (KAN) adapter to produce compact, weather-discriminative condition embeddings, and **(ii)** a parameter-efficient restoration backbone that injects these embeddings through hybrid attention blocks integrating embedding-conditioned cross-attention, shifted-window self-attention, and channel recalibration.
 
@@ -86,14 +81,58 @@ Qualitative comparison across CDD-11, Snow100K, WeatherBench, and LOL. From left
 
 ---
 
+## Implementation and Evaluation Work
+
+The existing restoration framework has been extended with a working inference and evaluation workflow:
+
+- **Pretrained inference:** `infer.py` supports CPU and CUDA execution, image-only conditioning, and fused conditioning with a known weather label. Restored images include a JSON configuration report.
+- **Dataset acquisition and validation:** `fetch_dataset.py` downloads the official CDD-11 test archive and verifies its SHA-256 checksum. `validate_data.py` checks paired image paths before evaluation.
+- **Complete evaluation:** `evaluate_dataset.py` evaluates both conditioning modes and saves aggregate, per-weather, and per-image metrics, together with visual comparisons.
+- **Execution repairs:** checkpoint loading, evaluation paths, label mapping, metrics, batch and worker settings, and complete test coverage were repaired. Training execution and checkpoint resume were checked on a small fixture; full research training was not performed.
+
+### Measured CDD-11 Results
+
+Completed on **2026-11-04**, using the released pretrained checkpoints and the checksum-verified official test set. All **2,400 pairs** passed validation and were evaluated on CUDA without retraining.
+
+| Conditioning mode | PSNR (dB), all 2,400 pairs | SSIM, all 2,400 pairs | PSNR (dB), 2,200 degraded pairs | SSIM, 2,200 degraded pairs |
+| --- | ---: | ---: | ---: | ---: |
+| Image only | 19.4439 | 0.814978 | 18.6281 | 0.800027 |
+| Image + known weather label | 29.7476 | 0.922571 | 27.2855 | 0.915544 |
+
+**Evaluation settings:** 224 x 224 inputs, batch size 8, non-shifted windows, ImageNet-normalized released-evaluator preprocessing, and source prototype row names. Total data, inference, and metrics time was **525.3 seconds**. LPIPS was not measured.
+
+The all-pair scores include **200 clean identity pairs**. Their raw-input PSNR is infinite, so finite raw-input averages cannot be compared directly with all-pair output means. The degraded-only columns exclude those clean cases.
+
+Fused conditioning uses the dataset's known weather labels; its scores do not establish equivalent performance for unknown-weather images. Historical shift settings and learned prototype semantics remain unverified, so these results document a measured local run rather than an exact reproduction of the original experiment.
+
+See [EVALUATION_RESULTS.md](EVALUATION_RESULTS.md) for the evaluation record and [DATASET.md](DATASET.md) for dataset provenance. Saved outputs in `results_cdd11/` include `metrics.json`, `per_image.csv`, and one `<weather>_comparison.png` per condition, ordered input / image-only / fused / clean reference.
+
+### Reproduce Dataset Evaluation
+
+Run from the project directory with the inference environment and pretrained checkpoints available:
+
+```powershell
+.\.venv\Scripts\python.exe fetch_dataset.py --split test
+.\.venv\Scripts\python.exe validate_data.py --root data/cdd11 --split test
+.\.venv\Scripts\python.exe evaluate_dataset.py --root data/cdd11 --output results_cdd11_rerun --conditioning both --batch-size 8 --workers 0
+```
+
+### Restore a Single Image
+
+```powershell
+.\.venv\Scripts\python.exe infer.py --input path/to/image.png --output results/restored.png --device cuda
+```
+
+Use `--device cpu` for CPU inference. For a known condition, add `--conditioning fused --weather haze` (or another supported weather label). Processing defaults to 224 x 224; `--height`, `--width`, and `--original-size` control output sizing. Resizing the output to its original dimensions does not recover detail lost during processing.
+
+---
+
 ## Quick Start
 
 ### Installation
 
 ```bash
-git clone https://github.com/Judith989/omnirestore.git
-cd omnirestore
-
+# Run from your local project directory.
 conda create -n omnirestore python=3.10
 conda activate omnirestore
 
@@ -211,7 +250,9 @@ Depending on your local configuration, run `--stage 1` to extract embeddings and
 
 ---
 
-## Performance
+## Originally Reported Performance
+
+The following tables preserve the original project's reported benchmark values. They are separate from the local measurements above; the local run does not verify these latency or cross-method comparisons.
 
 ### CDD-11
 
@@ -232,28 +273,3 @@ Depending on your local configuration, run `--stage 1` to extract embeddings and
 | **OmniRestore** | **2.60M** | **6.3 ms** |
 
 ---
-
-## Citation
-
-If you find this work useful, please cite:
-
-```bibtex
-@InProceedings{Njoku_2026_CVPR,
-    author    = {Njoku, Judith and Shukla, Diksha},
-    title     = {OmniRestore: A Parameter-Efficient Framework for Universal Adverse-Weather Image Restoration},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops},
-    month     = {June},
-    year      = {2026},
-    pages     = {2236--2246}
-}
-```
-
----
-
-## Contact
-
-For questions, please contact:
-
-**Judith N. Njoku**
-Website: https://www.judithnnjoku.me
-LinkedIn: https://www.linkedin.com/in/judith989/
