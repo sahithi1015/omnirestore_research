@@ -20,7 +20,7 @@ Accepted to **CVPR 2026 Workshops, NTIRE**.
 
 ## Abstract
 
-Reliable perception under adverse weather remains a significant challenge for vision systems. While state-of-the-art multi-weather image restoration models achieve strong performance, they often rely on large architectures with high parameter counts, limiting their utility for real-time and edge deployment. To address this efficiency gap, **OmniRestore** provides, a lightweight multimodal framework specifically designed for adverse-weather image restoration across rain, fog, snow, low-light conditions, and challenging composite degradations.
+Reliable perception under adverse weather remains a significant challenge for vision systems. While state-of-the-art multi-weather image restoration models achieve strong performance, they often rely on large architectures with high parameter counts, limiting their utility for real-time and edge deployment. To address this efficiency gap, **OmniRestore** provides a lightweight multimodal framework specifically designed for adverse-weather image restoration across rain, fog, snow, low-light conditions, and challenging composite degradations.
 
 OmniRestore consists of two key components: **(i)** a multimodal weather-scene embedder that aligns CLIP-derived text prototypes with image features via a ResNet encoder, refined offline by a Kolmogorov-Arnold Network (KAN) adapter to produce compact, weather-discriminative condition embeddings, and **(ii)** a parameter-efficient restoration backbone that injects these embeddings through hybrid attention blocks integrating embedding-conditioned cross-attention, shifted-window self-attention, and channel recalibration.
 
@@ -106,6 +106,19 @@ The all-pair scores include **200 clean identity pairs**. Their raw-input PSNR i
 Fused conditioning uses the dataset's known weather labels; its scores do not establish equivalent performance for unknown-weather images. Historical shift settings and learned prototype semantics remain unverified, so these results document a measured local run rather than an exact reproduction of the original experiment.
 
 See [EVALUATION_RESULTS.md](EVALUATION_RESULTS.md) for the evaluation record and [DATASET.md](DATASET.md) for dataset provenance. Saved outputs in `results_cdd11/` include `metrics.json`, `per_image.csv`, and one `<weather>_comparison.png` per condition, ordered input / image-only / fused / clean reference.
+
+### Haze Restoration Example
+
+![Haze restoration result with before/after comparison and evaluation metrics](assets/haze_restoration_result.jpeg)
+
+The CDD-11 sample `haze/00002.png` was restored using **image + known weather label (haze)** conditioning on CUDA at **224 x 224** resolution. The screenshot shows the hazy input, a before/after comparison, and the measured output quality.
+
+| Image | PSNR (dB) | SSIM |
+| --- | ---: | ---: |
+| Hazy input | 15.4481 | 0.805866 |
+| Restored output | **29.1932** | **0.988907** |
+
+PSNR improved by **13.7451 dB**, and SSIM increased by **0.183041**. Both metrics compare the images against the matching clean reference resized to 224 x 224; output scores use the exported 8-bit PNG. These are results for one haze sample, separate from the full-dataset averages above. The displayed **0.59-second** CUDA processing time is a single-run measurement, not a latency benchmark.
 
 ### Reproduce Dataset Evaluation
 
